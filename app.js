@@ -5,7 +5,7 @@ const express = require('express');
 const morgan = require('morgan');
 const { Sequelize, sequelize, models } = require('./db');
 const { User } = require('./db/models/user');
-const data = require('./seed/data.json');
+const { users, courses } = require('./seed/data.json');
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -18,11 +18,15 @@ const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'tr
 const authenicateUser = (req, res, next) => {
   let message = null;
   const credentials = auth(req);
+  console.log(credentials);
+
   if (credentials) {
-    const user = user.find(u => u.emailAddress === credentials.emailAddress);
+    const user = users.find((u) => u.emailAddress === credentials.name);
+    console.log(user.emailAddress)
+    console.log(user.password)
     if (user) {
       const authenticated = bcryptjs
-        .compareSync(credentials.password, user.password);
+        .compareSync(credentials.pass, user.password);
       if (authenticated) {
         req.currentUser = user;
       } else {
