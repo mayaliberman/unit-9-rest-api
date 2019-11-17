@@ -5,7 +5,7 @@ const express = require('express');
 const morgan = require('morgan');
 const { Sequelize, sequelize, models } = require('./db');
 const { User } = require('./db/models/user');
-const { users, courses } = require('./seed/data.json');
+const database = require('./seed/database.js').Database;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -19,16 +19,18 @@ const authenicateUser = (req, res, next) => {
   let message = null;
   const credentials = auth(req);
   console.log(credentials);
-
+  console.log('users', database.users)
   if (credentials) {
     const user = users.find((u) => u.emailAddress === credentials.name);
-    console.log(user.emailAddress)
-    console.log(user.password)
+
     if (user) {
       const authenticated = bcryptjs
-        .compareSync(credentials.pass, user.password);
+        .compareSync(credentials.pass, password);
+      console.log('credentials', credentials.pass, 'user.password', user.password)
       if (authenticated) {
+        console.log('athonticate')
         req.currentUser = user;
+
       } else {
         message = `Authentication failure for email: ${user.emailAddress}`
       }
@@ -67,13 +69,45 @@ app.use(morgan('dev'));
 //USER ROUTES
 app.get('/api/users', authenicateUser, (req, res) => {
   const user = req.currentUser;
-  res.status(200).json({
-    emailAddress: user.emailAddress,
+  console.log('/ ', user)
+  json({
+    emailAddress: user.name,
     firstName: user.firstName,
     lastName: user.lastName
   });
 
 });
+
+app.post('/users', [
+  check('firstName')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a valude for "name"'),
+  check('lastName')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "userame"'),
+  check('emailAddress')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "emailAddress"'),
+
+  check('password')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "password"'),
+
+], (req, res) => {
+  const errors = validationResult(req);
+  // Get the user from the request body
+
+  if (!errors.isEmpty()) {
+    const errorMessage = errors.array().map(error => error.msg);
+    return res.status(400).json({ errors: errorMessage });
+  }
+  const user = req.body;
+  user.password = bcryptjs.hashSync(user.password);
+  //Add the user to the 'users' array.
+  users.push(user);
+
+  res.status(201).end();
+})
 // router.post('/quotes', asyncHandler(async (req, res) => {
 //   if (req.body.author && req.body.quote) {
 //     const quote = await records.createQuote({
@@ -85,20 +119,20 @@ app.get('/api/users', authenicateUser, (req, res) => {
 //     res.status(400).json({ message: "Quote and author required." });
 //   }
 // }));
-app.post('/api/users', asyncHandler(async (req, res) => {
-  User.create(req.body)
-    .then(() => {
-      res.redirect('/');
-    })
-    .catch((err) => {
-      res.status(500)
+// app.post('/api/users', asyncHandler(async (req, res) => {
+//   User.create(req.body)
+//     .then(() => {
+//       res.redirect('/');
+//     })
+//     .catch((err) => {
+//       res.status(500)
 
-    })
-  // res.sendRedirect('/');
-  // res.redirect('/');
-  res.status(201).end();
-}))
-// setup a friendly greeting for the root route
+//     })
+//   // res.sendRedirect('/');
+//   // res.redirect('/');
+//   res.status(201).end();
+// }))
+// // setup a friendly greeting for the root route
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!',

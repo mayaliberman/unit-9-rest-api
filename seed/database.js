@@ -3,7 +3,7 @@
 const bcryptjs = require('bcryptjs');
 const Context = require('./context');
 
-class Database {
+module.exports = class Database {
   constructor(seedData, enableLogging) {
     this.courses = seedData.courses;
     this.users = seedData.users;
@@ -149,4 +149,4 @@ class Database {
   }
 }
 
-module.exports = Database;
+
