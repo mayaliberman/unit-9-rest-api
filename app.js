@@ -4,19 +4,19 @@
 const express = require('express');
 const morgan = require('morgan');
 const { Sequelize, sequelize, models } = require('./db')
-const User = models.User;
+const data = require('./seed/data.json')
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
 
 //Async Handles to retreive data async
 function asyncHandler(cb) {
-return async (req, res, next) => {
-  try {
-    await cb(req, res, next);
-  } catch (err) {
-    next(err);
+  return async (req, res, next) => {
+    try {
+      await cb(req, res, next);
+    } catch (err) {
+      next(err);
+    }
   }
-}
 }
 
 // create the Express app
@@ -28,12 +28,16 @@ app.use(morgan('dev'));
 // TODO setup your api routes here
 
 //USER ROUTES
-app.get('/api/users', asyncHandler(async (req, res) => {
- const users = await User.findAll()
-    res.json(users);
-    
-  
-}));
+app.get('/api/users', (req, res) => {
+  res.status(200).json(data.users);
+
+});
+
+app.post('/api/users', (req, res) => {
+  // res.sendRedirect('/');
+  res.redirect('/');
+  res.status(201).end();
+})
 // setup a friendly greeting for the root route
 app.get('/', (req, res) => {
   res.json({
