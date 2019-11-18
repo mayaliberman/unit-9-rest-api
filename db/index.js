@@ -8,6 +8,7 @@ const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: 'fsjstd-restapi.db'
 });
+
 const models = {};
 (async () => {
     await sequelize.authenticate();

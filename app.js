@@ -5,7 +5,9 @@ const express = require('express');
 const morgan = require('morgan');
 // const { models } = require('./db');
 const { Sequelize, sequelize, models } = require('./db');
-const { User, Course } = models;
+// const { User, Course } = models
+// const User = models.User;
+// const Course = models.Course;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -30,15 +32,16 @@ const authenicateUser = asyncHandler(async (req, res, next) => {
   let message = null;
 
   const credentials = auth(req);
- 
+
   if (credentials) {
-    
-    const user = await User.findOne({
+
+    const user = await models.User.findOne({
       where: {
-        emailAddress: credentials.name
+        emailAddress: credentials.name,
+        password: credentials.pass
       }
     });
-
+    
     if (user) {
       const authenticated = bcryptjs
         .compareSync(credentials.pass, user.password);
@@ -75,7 +78,6 @@ app.use(morgan('dev'));
 //USER ROUTES
 app.get('/api/users', authenicateUser, (req, res) => {
   const user = req.currentUser;
-  console.log('/ ', user)
   res.status(200).json({
     name: user.firstName,
     email: user.emailAddress
@@ -113,31 +115,10 @@ app.post('/users', [
 
   res.status(201).end();
 })
-// router.post('/quotes', asyncHandler(async (req, res) => {
-//   if (req.body.author && req.body.quote) {
-//     const quote = await records.createQuote({
-//       quote: req.body.quote,
-//       author: req.body.author
-//     });
-//     res.status(201).json(quote);
-//   } else {
-//     res.status(400).json({ message: "Quote and author required." });
-//   }
-// }));
-// app.post('/api/users', asyncHandler(async (req, res) => {
-//   User.create(req.body)
-//     .then(() => {
-//       res.redirect('/');
-//     })
-//     .catch((err) => {
-//       res.status(500)
-
-//     })
-//   // res.sendRedirect('/');
-//   // res.redirect('/');
-//   res.status(201).end();
-// }))
-// // setup a friendly greeting for the root route
+app.get('/api/courses', (req, res) => {
+  const courses = Course.findAll({ order: [['title', 'ASC']] })
+  res.json(courses).status(200)
+})
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!',
