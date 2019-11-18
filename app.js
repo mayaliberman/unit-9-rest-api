@@ -3,32 +3,47 @@
 // load modules
 const express = require('express');
 const morgan = require('morgan');
-const { Sequelize, sequelize, models } = require('./db');
-const { User } = require('./db/models/user');
-const database = require('./seed/database.js').Database;
+const { sequelize, Sequelize, models } = require('./db');
+const { User, Course } = models; 
+const database = require('./seed/database');
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
+
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
 
 
+//Async Handles to retreive data async
+function asyncHandler(cb) {
+  return async (req, res, next) => {
+    try {
+      await cb(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  }
+}
 //Authentication of user 
 
-const authenicateUser = (req, res, next) => {
+const authenicateUser = asyncHandler ( async (req, res, next) => {
   let message = null;
-  const credentials = auth(req);
-  console.log(credentials);
-  console.log('users', database.users)
-  if (credentials) {
-    const user = users.find((u) => u.emailAddress === credentials.name);
 
+  const credentials = auth(req);
+    
+  if (credentials) {
+    const user = await User.findOne({
+      where: {
+        emailAddress: credentials.name
+      }
+    });
+    
     if (user) {
       const authenticated = bcryptjs
-        .compareSync(credentials.pass, password);
-      console.log('credentials', credentials.pass, 'user.password', user.password)
+        .compareSync(credentials.pass, user.password);
+      
       if (authenticated) {
-        console.log('athonticate')
+       
         req.currentUser = user;
 
       } else {
@@ -46,17 +61,7 @@ const authenicateUser = (req, res, next) => {
   } else {
     next();
   }
-}
-//Async Handles to retreive data async
-function asyncHandler(cb) {
-  return async (req, res, next) => {
-    try {
-      await cb(req, res, next);
-    } catch (err) {
-      next(err);
-    }
-  }
-}
+});
 
 // create the Express app
 const app = express();
@@ -70,10 +75,9 @@ app.use(morgan('dev'));
 app.get('/api/users', authenicateUser, (req, res) => {
   const user = req.currentUser;
   console.log('/ ', user)
-  json({
-    emailAddress: user.name,
-    firstName: user.firstName,
-    lastName: user.lastName
+  res.status(200).json({
+    name: user.firstName,
+    email: user.emailAddress
   });
 
 });
