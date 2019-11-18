@@ -3,9 +3,9 @@
 // load modules
 const express = require('express');
 const morgan = require('morgan');
-const { sequelize, Sequelize, models } = require('./db');
-const { User, Course } = models; 
-const database = require('./seed/database');
+// const { models } = require('./db');
+const { Sequelize, sequelize, models } = require('./db');
+const { User, Course } = models;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -26,24 +26,25 @@ function asyncHandler(cb) {
 }
 //Authentication of user 
 
-const authenicateUser = asyncHandler ( async (req, res, next) => {
+const authenicateUser = asyncHandler(async (req, res, next) => {
   let message = null;
 
   const credentials = auth(req);
-    
+ 
   if (credentials) {
+    
     const user = await User.findOne({
       where: {
         emailAddress: credentials.name
       }
     });
-    
+
     if (user) {
       const authenticated = bcryptjs
         .compareSync(credentials.pass, user.password);
-      
+
       if (authenticated) {
-       
+
         req.currentUser = user;
 
       } else {

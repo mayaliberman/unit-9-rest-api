@@ -1,13 +1,14 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const Sequelize = require('sequelize');
+const { Sequelize } = require('sequelize');
+
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: 'fsjstd-restapi.db'
 });
-const models = {}; 
+const models = {};
 (async () => {
     await sequelize.authenticate();
 
@@ -35,10 +36,10 @@ const models = {};
 
 
 
-  
+
 
 module.exports = {
     sequelize,
     Sequelize,
-   models
+    models
 }
