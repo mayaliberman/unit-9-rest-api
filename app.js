@@ -3,11 +3,8 @@
 // load modules
 const express = require('express');
 const morgan = require('morgan');
-// const { models } = require('./db');
 const { Sequelize, sequelize, models } = require('./db');
-// const { User, Course } = models
-// const User = models.User;
-// const Course = models.Course;
+const User = models.User;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -37,11 +34,10 @@ const authenicateUser = asyncHandler(async (req, res, next) => {
 
     const user = await models.User.findOne({
       where: {
-        emailAddress: credentials.name,
-        password: credentials.pass
+        emailAddress: credentials.name
       }
     });
-    
+    console.log(user)
     if (user) {
       const authenticated = bcryptjs
         .compareSync(credentials.pass, user.password);
@@ -67,9 +63,35 @@ const authenicateUser = asyncHandler(async (req, res, next) => {
   }
 });
 
+
+//user validation
+const userValidation = [
+  check('firstName')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "first name"'),
+  check('lastName')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "last name"'),
+  check('emailAddress')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "email"')
+    .isEmail()
+    .withMessage('Plase provie a valid email address for "email"'),
+  check('password')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Plase  provide a value for "passowrd')
+  // .custom(value => {
+  //   return models.User.findUserByEmail(value).then(user => {
+  //     if (user) {
+  //       return Promise.reject('E-mail already in use');
+  //     }
+  //   })
+  // }),
+]
 // create the Express app
 const app = express();
-
+// using middleware for reading json
+app.use(express.json());
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
@@ -79,42 +101,31 @@ app.use(morgan('dev'));
 app.get('/api/users', authenicateUser, (req, res) => {
   const user = req.currentUser;
   res.status(200).json({
-    name: user.firstName,
-    email: user.emailAddress
+    firstName: user.firstName,
+    lastName: user.lastName,
+    emailAddress: user.emailAddress
   });
 
 });
-
-app.post('/users', [
-  check('firstName')
-    .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Please provide a valude for "name"'),
-  check('lastName')
-    .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Please provide a value for "userame"'),
-  check('emailAddress')
-    .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Please provide a value for "emailAddress"'),
-
-  check('password')
-    .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Please provide a value for "password"'),
-
-], (req, res) => {
-  const errors = validationResult(req);
-  // Get the user from the request body
-
+//CREATE NEW USER WITH VALIDATION
+app.post('/api/users', userValidation, (req, res) => {
+  const errors = validationResult(req)
   if (!errors.isEmpty()) {
-    const errorMessage = errors.array().map(error => error.msg);
-    return res.status(400).json({ errors: errorMessage });
+    const errorMessages = errors.array().map(error => error.msg);
+    res.status(400).json({ errors: errorMessages })
+  } else {
+    models.User.create(req.body)
+      .then(() => {
+        res.status(201).end();
+      })
+      .catch((err) => {
+        throw err;
+      })
+    res.redirect('/')
   }
-  const user = req.body;
-  user.password = bcryptjs.hashSync(user.password);
-  //Add the user to the 'users' array.
-  users.push(user);
-
-  res.status(201).end();
 })
+
+
 app.get('/api/courses', (req, res) => {
   const courses = Course.findAll({ order: [['title', 'ASC']] })
   res.json(courses).status(200)
