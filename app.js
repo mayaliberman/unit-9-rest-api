@@ -116,8 +116,7 @@ app.post('/api/users', userValidation, (req, res) => {
   } else {
     models.User.create(req.body)
       .then(() => {
-        res.status(201);
-        res.redirect('/').end()
+        res.status(201).redirect('/').end()
       })
       .catch((err) => {
         throw err;
