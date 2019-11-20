@@ -4,7 +4,6 @@
 const express = require('express');
 const morgan = require('morgan');
 const { Sequelize, sequelize, models } = require('./db');
-const User = models.User;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -116,9 +115,9 @@ app.post('/api/users', userValidation, (req, res) => {
   } else {
     models.User.create(req.body)
       .then(() => {
-        // res.location('/');
+        res.location('/');
         res.status(201).end();
-        
+
       })
       .catch((err) => {
         throw err;
@@ -126,11 +125,18 @@ app.post('/api/users', userValidation, (req, res) => {
   }
 })
 
+//COURSES ROUTES
+app.get('/api/courses', asyncHandler(async (req, res) => {
+  const courses = await models.Course.findAll({ order: [['title', 'ASC']] });
+  console.log(courses)
+  if (courses) {
+    res.status(200).json({
+      title: courses.title,
+      description: courses.description,
+    })
+  }
+}));
 
-app.get('/api/courses', (req, res) => {
-  const courses = Course.findAll({ order: [['title', 'ASC']] })
-  res.json(courses).status(200)
-})
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!',
