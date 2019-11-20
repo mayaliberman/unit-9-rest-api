@@ -3,10 +3,13 @@
 // load modules
 const express = require('express');
 const morgan = require('morgan');
-const { Sequelize, sequelize, models } = require('./db');
+const { models, Course, User } = require('./db');
+// const Course = require('./db/models/course').Course;
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
+
+
 
 // variable to enable global error logging
 const enableGlobalErrorLogging = process.env.ENABLE_GLOBAL_ERROR_LOGGING === 'true';
@@ -36,7 +39,7 @@ const authenicateUser = asyncHandler(async (req, res, next) => {
         emailAddress: credentials.name
       }
     });
-    console.log(user)
+    
     if (user) {
       const authenticated = bcryptjs
         .compareSync(credentials.pass, user.password);
@@ -94,6 +97,8 @@ app.use(express.json());
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
+
+
 // TODO setup your api routes here
 
 //USER ROUTES
@@ -113,28 +118,41 @@ app.post('/api/users', userValidation, (req, res) => {
     const errorMessages = errors.array().map(error => error.msg);
     res.status(400).json({ errors: errorMessages })
   } else {
-    models.User.create(req.body)
+    //Hashing the new user password
+    const user = req.body;
+    user.password = bcryptjs.hashSync(user.password);
+    models.User.create(user)
       .then(() => {
         res.location('/');
         res.status(201).end();
-
       })
       .catch((err) => {
         throw err;
       })
   }
-})
+});
+
+
 
 //COURSES ROUTES
 app.get('/api/courses', asyncHandler(async (req, res) => {
-  const courses = await models.Course.findAll({ order: [['title', 'ASC']] });
-  console.log(courses)
-  if (courses) {
-    res.status(200).json({
-      title: courses.title,
-      description: courses.description,
-    })
-  }
+  const course = await models.Course.findAll();
+  res.json({course})
+  // const courses = await models.Course.findAll({ order: [['title', 'ASC']] });
+  
+  // if (courses) {
+  //   res.status(200).json(
+  //     {
+  //       message: 'courses',
+  //     }
+  //     // {
+  //     // title: courses.title,
+  //     // description: courses.description,
+  //     // }
+  //   )
+  // } else {
+
+  // }
 }));
 
 app.get('/', (req, res) => {
