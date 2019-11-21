@@ -31,12 +31,14 @@ module.exports = sequelize => {
     { sequelize }
   );
 
-  User.associate = models => {
+  User.associate = (models) => {
     User.hasMany(models.Course, {
+       
       foreignKey: {
-        fieldName: 'userId'
-        // allowNull: false,
+        fieldName: 'userId',
+        allowNull: false,
       }
+      
     });
   };
 

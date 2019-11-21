@@ -162,7 +162,7 @@ app.post(
     
     if (title && description) {
       await models.Course.create({ title, description });
-      return res.status(201)
+      return res.status(201).end();
       // .location('/:id');
     } else {
       res.status(400);

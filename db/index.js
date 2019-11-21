@@ -11,10 +11,12 @@ const sequelize = new Sequelize({
 
 const models = {};
 (async () => {
-    await sequelize.authenticate();
-
     try {
         console.log('Connection successful');
+        await sequelize.authenticate();
+        console.log('Synchonizing the models with the database')
+        await sequelize.sync({force: true});
+        console.log('Synchronized')
         fs
             .readdirSync(path.join(__dirname, 'models'))
             .forEach((file) => {
@@ -29,6 +31,7 @@ const models = {};
                 models[modelName].associate(models);
             }
         });
+      
     } catch (err) {
         console.log('Sorry there was a problem connecting')
     }

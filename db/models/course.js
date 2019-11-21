@@ -31,12 +31,12 @@ module.exports = sequelize => {
     { sequelize }
   );
 
-  Course.associate = models => {
+  Course.associate = (models) => {
     Course.belongsTo(models.User, {
-      as: 'userId',
+      
       foreignKey: {
         fieldName: 'userId',
-        // allowNull: false
+        allowNull: false,
       }
     });
   };
