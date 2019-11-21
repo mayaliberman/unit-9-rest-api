@@ -130,10 +130,10 @@ app.get(
   '/api/courses',
   asyncHandler(async (req, res) => {
     const course = await models.Course.findAll();
-    try {
+    if (course) {
       res.json({ course });
       res.status(200);
-    } catch (err) {
+    } else {
       res.status(500).json({ message: err });
     }
   })
@@ -144,16 +144,28 @@ app.get(
   asyncHandler(async (req, res) => {
     const courseId = req.params.id;
     console.log(courseId);
-    try {
-      const course = await models.Course.findByPk(courseId);
-      if(course) {
-        res.json({ course });
-        res.status(200);
-      } else {
-        res.status(404).json({message: 'page not found'})
-      }
-    } catch (err) {
-      res.status(404).json({ message: err });
+
+    const course = await models.Course.findByPk(courseId);
+    if (course) {
+      res.json({ course });
+      res.status(200);
+    } else {
+      res.status(404).json({ message: 'page not found' });
+    }
+  })
+);
+
+app.post(
+  '/api/courses',
+  asyncHandler(async (req, res) => {
+    const { title, description } = req.body;
+    
+    if (title && description) {
+      await models.Course.create({ title, description });
+      return res.status(201)
+      // .location('/:id');
+    } else {
+      res.status(400);
     }
   })
 );
