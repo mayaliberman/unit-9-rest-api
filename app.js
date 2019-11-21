@@ -2,7 +2,6 @@
 
 // load modules
 const express = require('express');
-console.log('@@@GIL hi!');
 const morgan = require('morgan');
 const { models, Course, User } = require('./db');
 // const Course = require('./db/models/course').Course;
@@ -131,22 +130,31 @@ app.get(
   '/api/courses',
   asyncHandler(async (req, res) => {
     const course = await models.Course.findAll();
-    res.json({ course });
-    // const courses = await models.Course.findAll({ order: [['title', 'ASC']] });
+    try {
+      res.json({ course });
+      res.status(200);
+    } catch (err) {
+      res.status(500).json({ message: err });
+    }
+  })
+);
 
-    // if (courses) {
-    //   res.status(200).json(
-    //     {
-    //       message: 'courses',
-    //     }
-    //     // {
-    //     // title: courses.title,
-    //     // description: courses.description,
-    //     // }
-    //   )
-    // } else {
-
-    // }
+app.get(
+  '/api/courses/:id',
+  asyncHandler(async (req, res) => {
+    const courseId = req.params.id;
+    console.log(courseId);
+    try {
+      const course = await models.Course.findByPk(courseId);
+      if(course) {
+        res.json({ course });
+        res.status(200);
+      } else {
+        res.status(404).json({message: 'page not found'})
+      }
+    } catch (err) {
+      res.status(404).json({ message: err });
+    }
   })
 );
 
