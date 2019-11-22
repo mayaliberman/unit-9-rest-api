@@ -3,8 +3,7 @@
 // load modules
 const express = require('express');
 const morgan = require('morgan');
-const { models, Course, User } = require('./db');
-// const Course = require('./db/models/course').Course;
+const { models } = require('./db');
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 const { check, validationResult } = require('express-validator');
@@ -24,7 +23,6 @@ function asyncHandler(cb) {
   };
 }
 //Authentication of user
-
 const authenicateUser = asyncHandler(async (req, res, next) => {
   let message = null;
 
@@ -86,6 +84,16 @@ const userValidation = [
   //   })
   // }),
 ];
+
+//Course validation
+const courseValidation = [
+  check('title')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "title"'),
+  check('description')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Please provide a value for "description"')
+];
 // create the Express app
 const app = express();
 // using middleware for reading json
@@ -105,7 +113,7 @@ app.get('/api/users', authenicateUser, (req, res) => {
   });
 });
 //CREATE NEW USER WITH VALIDATION
-app.post('/api/users', userValidation, (req, res) => {
+app.post('/api/users', userValidation, asyncHandler( async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(error => error.msg);
@@ -114,16 +122,18 @@ app.post('/api/users', userValidation, (req, res) => {
     //Hashing the new user password
     const user = req.body;
     user.password = bcryptjs.hashSync(user.password);
-    models.User.create(user)
-      .then(() => {
-        res.location('/');
-        res.status(201).end();
-      })
-      .catch(err => {
-        throw err;
-      });
+    const newUser = await models.User.create(user);
+    if(newUser) {
+      res.location('/');
+      res.status(201).end();
+
+    } else {
+      throw err;
+    }
+      
   }
-});
+ 
+}));
 
 //COURSES ROUTES
 app.get(
@@ -143,8 +153,6 @@ app.get(
   '/api/courses/:id',
   asyncHandler(async (req, res) => {
     const courseId = req.params.id;
-    console.log(courseId);
-
     const course = await models.Course.findByPk(courseId);
     if (course) {
       res.json({ course });
@@ -157,19 +165,69 @@ app.get(
 
 app.post(
   '/api/courses',
+  courseValidation, authenicateUser,
   asyncHandler(async (req, res) => {
-    const { title, description, userId } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(error => error.msg);
+      res.status(400).json({ errors: errorMessages });
+    } else {
+      //Hashing the new user password
+      const course = req.body;
+      const newCourse =  await models.Course.create(course);
+      if(newCourse) {
+        res.location('api/course/:id');
+        return res.status(201).end();
+
+      } else {
+        res.status(400).json({message: err})
+      }
+     
+        
+       
+    }
     
-    if (title && description && userId) {
-      await models.Course.create({ title, description, userId });
-      res.location('api/course/:id');
-      return res.status(201).end();
+  })
+);
+
+app.put(
+  '/api/courses/:id', authenicateUser,
+  asyncHandler(async (req, res, next) => {
+    const courseId = req.params.id;
+    console.log(courseId);
+    const course = await models.Course.update(
+      {
+        title: req.body.title,
+        description: req.body.description,
+        materialsNeeded: req.body.materialsNeeded,
+        userId: req.body.userId
+      },
+      { where: { id: req.params.id } }
+    );
+    if (course) {
+      res.status(204).end();
     } else {
       res.status(400);
     }
   })
 );
 
+app.delete(
+  '/api/courses/:id', authenicateUser,
+  asyncHandler(async (req, res) => {
+    const course = await models.Course.destroy({
+      where: { id: req.params.id }
+    });
+    if (course) {
+      res.location('/');
+      res.status(204).end();
+    } else {
+      res.status(400);
+    }
+  })
+);
+
+//GENERAL ROUTE
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!'
