@@ -22,7 +22,9 @@ function asyncHandler(cb) {
     }
   };
 }
-//Authentication of user
+//*****HELPER FUNCTIONS*****
+
+//USER AUTHENTICATION
 const authenicateUser = asyncHandler(async (req, res, next) => {
   let message = null;
 
@@ -60,7 +62,7 @@ const authenicateUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//user validation
+//USER VALIDATION
 const userValidation = [
   check('firstName')
     .exists({ checkNull: true, checkFalsy: true })
@@ -85,7 +87,7 @@ const userValidation = [
   // }),
 ];
 
-//Course validation
+//COURSE VALIDATION
 const courseValidation = [
   check('title')
     .exists({ checkNull: true, checkFalsy: true })
@@ -94,6 +96,9 @@ const courseValidation = [
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "description"')
 ];
+
+//EXPRESS HELPER FUNCTIONS
+
 // create the Express app
 const app = express();
 // using middleware for reading json
@@ -101,9 +106,12 @@ app.use(express.json());
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
-// TODO setup your api routes here
 
-//USER ROUTES
+////////API ROUTES/////////
+
+//*****USER ROUTES*******
+
+//GETING A SPECIFIC USER WITH AUTHENTICATION
 app.get('/api/users', authenicateUser, (req, res) => {
   const user = req.currentUser;
   res.status(200).json({
@@ -112,30 +120,34 @@ app.get('/api/users', authenicateUser, (req, res) => {
     emailAddress: user.emailAddress
   });
 });
+
 //CREATE NEW USER WITH VALIDATION
-app.post('/api/users', userValidation, asyncHandler( async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const errorMessages = errors.array().map(error => error.msg);
-    res.status(400).json({ errors: errorMessages });
-  } else {
-    //Hashing the new user password
-    const user = req.body;
-    user.password = bcryptjs.hashSync(user.password);
-    const newUser = await models.User.create(user);
-    if(newUser) {
-      res.location('/');
-      res.status(201).end();
-
+app.post(
+  '/api/users',
+  userValidation,
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(error => error.msg);
+      res.status(400).json({ errors: errorMessages });
     } else {
-      throw err;
+      //Hashing the new user password
+      const user = req.body;
+      user.password = bcryptjs.hashSync(user.password);
+      const newUser = await models.User.create(user);
+      if (newUser) {
+        res.location('/');
+        res.status(201).end();
+      } else {
+        throw err;
+      }
     }
-      
-  }
- 
-}));
+  })
+);
 
-//COURSES ROUTES
+//*****COURSES ROUTES*****
+
+//LIST OF ALL COURSES IN DATABASE
 app.get(
   '/api/courses',
   asyncHandler(async (req, res) => {
@@ -149,6 +161,7 @@ app.get(
   })
 );
 
+//GET A COURSE BY QUERY
 app.get(
   '/api/courses/:id',
   asyncHandler(async (req, res) => {
@@ -163,35 +176,33 @@ app.get(
   })
 );
 
+//ADDING A NEW POST WITH AUTHENTICATION AND VALIDATION
 app.post(
   '/api/courses',
-  courseValidation, authenicateUser,
+  courseValidation,
+  authenicateUser,
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const errorMessages = errors.array().map(error => error.msg);
       res.status(400).json({ errors: errorMessages });
     } else {
-      //Hashing the new user password
       const course = req.body;
-      const newCourse =  await models.Course.create(course);
-      if(newCourse) {
+      const newCourse = await models.Course.create(course);
+      if (newCourse) {
         res.location('api/course/:id');
         return res.status(201).end();
-
       } else {
-        res.status(400).json({message: err})
+        res.status(400).json({ message: err });
       }
-     
-        
-       
     }
-    
   })
 );
 
+//UPDATING AN EXISING COURSE
 app.put(
-  '/api/courses/:id', authenicateUser,
+  '/api/courses/:id',
+  authenicateUser,
   asyncHandler(async (req, res, next) => {
     const courseId = req.params.id;
     console.log(courseId);
@@ -212,8 +223,10 @@ app.put(
   })
 );
 
+//DELETE AND EXISTING COURSE
 app.delete(
-  '/api/courses/:id', authenicateUser,
+  '/api/courses/:id',
+  authenicateUser,
   asyncHandler(async (req, res) => {
     const course = await models.Course.destroy({
       where: { id: req.params.id }
@@ -227,7 +240,7 @@ app.delete(
   })
 );
 
-//GENERAL ROUTE
+//*****GENERAL ROUTEES*****
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!'
