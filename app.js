@@ -106,7 +106,6 @@ app.use(express.json());
 // setup morgan which gives us http request logging
 app.use(morgan('dev'));
 
-
 ////////API ROUTES/////////
 
 //*****USER ROUTES*******
@@ -202,23 +201,28 @@ app.post(
 //UPDATING AN EXISING COURSE
 app.put(
   '/api/courses/:id',
-  authenicateUser,
-  asyncHandler(async (req, res, next) => {
-    const courseId = req.params.id;
-    console.log(courseId);
-    const course = await models.Course.update(
-      {
-        title: req.body.title,
-        description: req.body.description,
-        materialsNeeded: req.body.materialsNeeded,
-        userId: req.body.userId
-      },
-      { where: { id: req.params.id } }
-    );
-    if (course) {
-      res.status(204).end();
+  authenicateUser, 
+  asyncHandler(async (req, res) => {
+    const title = req.body.title;
+    const description = req.body.description;
+    if(title && description) {
+
+      const course = await models.Course.update(
+        {
+          title: req.body.title,
+          description: req.body.description,
+          materialsNeeded: req.body.materialsNeeded,
+          userId: req.body.userId
+        },
+        { where: { id: req.params.id } }
+      );
+      if (course) {
+        res.status(204).end();
+      } else {
+        res.status(400);
+      }
     } else {
-      res.status(400);
+      res.status(400).json({message: 'Please fill the missing fields'})
     }
   })
 );
