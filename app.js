@@ -158,12 +158,12 @@ app.get(
 app.post(
   '/api/courses',
   asyncHandler(async (req, res) => {
-    const { title, description } = req.body;
+    const { title, description, userId } = req.body;
     
-    if (title && description) {
-      await models.Course.create({ title, description });
+    if (title && description && userId) {
+      await models.Course.create({ title, description, userId });
+      res.location('api/course/:id');
       return res.status(201).end();
-      // .location('/:id');
     } else {
       res.status(400);
     }
