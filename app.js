@@ -175,6 +175,7 @@ app.get(
         }
       ]
     });
+    console.log(course.userId, 'course userId');
     if (course) {
       res.json({ course });
       res.status(200);
@@ -250,15 +251,19 @@ app.delete(
   '/api/courses/:id',
   authenicateUser,
   asyncHandler(async (req, res) => {
-    const course = await models.Course.destroy({
+    const deleteCourse = await models.Course.destroy({
       where: { id: req.params.id }
     });
-
-    if (course) {
-      res.location('/');
-      res.status(204).end();
+    const user = req.currentUser.id;
+    if (deleteCourse.userId === user) {
+      if (deleteCourse) {
+        res.location('/');
+        res.status(204).end();
+      } else {
+        res.status(400);
+      }
     } else {
-      res.status(400);
+      res.status(403);
     }
   })
 );
