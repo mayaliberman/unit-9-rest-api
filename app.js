@@ -78,13 +78,6 @@ const userValidation = [
   check('password')
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please  provide a value for "passowrd')
-  // .custom(value => {
-  //   return models.User.findUserByEmail(value).then(user => {
-  //     if (user) {
-  //       return Promise.reject('E-mail already in use');
-  //     }
-  //   })
-  // }),
 ];
 
 //COURSE VALIDATION
@@ -150,10 +143,15 @@ app.post(
 app.get(
   '/api/courses',
   asyncHandler(async (req, res) => {
-    const course = await models.Course.findAll({include: [{
-      model: models.User,
-      attributes: ['firstName', 'lastName', 'emailAddress']
-    }]});
+    const course = await models.Course.findAll({
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      include: [
+        {
+          model: models.User,
+          attributes: ['firstName', 'lastName', 'emailAddress']
+        }
+      ]
+    });
     if (course) {
       res.json({ course });
       res.status(200);
@@ -168,10 +166,15 @@ app.get(
   '/api/courses/:id',
   asyncHandler(async (req, res) => {
     const courseId = req.params.id;
-    const course = await models.Course.findByPk(courseId, {include: [{
-      model: models.User,
-      attributes: ['firstName', 'lastName', 'emailAddress']
-    }]});
+    const course = await models.Course.findByPk(courseId, {
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      include: [
+        {
+          model: models.User,
+          attributes: ['firstName', 'lastName', 'emailAddress']
+        }
+      ]
+    });
     if (course) {
       res.json({ course });
       res.status(200);
@@ -207,28 +210,37 @@ app.post(
 //UPDATING AN EXISING COURSE
 app.put(
   '/api/courses/:id',
-  authenicateUser, 
+  authenicateUser,
   asyncHandler(async (req, res) => {
+    const user = req.currentUser.id;
+    const userId = req.body.userId;
     const title = req.body.title;
     const description = req.body.description;
-    if(title && description) {
+    console.log('user', user, 'userId', userId);
 
-      const course = await models.Course.update(
-        {
-          title: req.body.title,
-          description: req.body.description,
-          materialsNeeded: req.body.materialsNeeded,
-          userId: req.body.userId
-        },
-        { where: { id: req.params.id } }
-      );
-      if (course) {
-        res.status(204).end();
+    if (user === userId) {
+      if (title && description) {
+        const course = await models.Course.update(
+          {
+            title: req.body.title,
+            description: req.body.description,
+            materialsNeeded: req.body.materialsNeeded,
+            userId: req.body.userId
+          },
+          { where: { id: req.params.id } }
+        );
+        if (course) {
+          res.status(204).end();
+        } else {
+          res.status(400);
+        }
       } else {
-        res.status(400);
+        res.status(400).json({ message: 'Please fill the missing fields' });
       }
     } else {
-      res.status(400).json({message: 'Please fill the missing fields'})
+      res
+        .status(403)
+        .json({ message: 'You are not aloud to update this course' });
     }
   })
 );
@@ -241,6 +253,7 @@ app.delete(
     const course = await models.Course.destroy({
       where: { id: req.params.id }
     });
+
     if (course) {
       res.location('/');
       res.status(204).end();
@@ -265,7 +278,7 @@ app.use((req, res) => {
 });
 
 // setup a global error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   if (enableGlobalErrorLogging) {
     console.error(`Global error handler: ${JSON.stringify(err.stack)}`);
   }
