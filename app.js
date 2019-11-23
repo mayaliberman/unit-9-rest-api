@@ -74,10 +74,10 @@ const userValidation = [
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage('Please provide a value for "email"')
     .isEmail()
-    .withMessage('Plase provie a valid email address for "email"'),
+    .withMessage('Please provie a valid email address for "email"'),
   check('password')
     .exists({ checkNull: true, checkFalsy: true })
-    .withMessage('Plase  provide a value for "passowrd')
+    .withMessage('Please  provide a value for "passowrd')
   // .custom(value => {
   //   return models.User.findUserByEmail(value).then(user => {
   //     if (user) {
@@ -150,7 +150,10 @@ app.post(
 app.get(
   '/api/courses',
   asyncHandler(async (req, res) => {
-    const course = await models.Course.findAll();
+    const course = await models.Course.findAll({include: [{
+      model: models.User,
+      attributes: ['firstName', 'lastName', 'emailAddress']
+    }]});
     if (course) {
       res.json({ course });
       res.status(200);
@@ -165,7 +168,10 @@ app.get(
   '/api/courses/:id',
   asyncHandler(async (req, res) => {
     const courseId = req.params.id;
-    const course = await models.Course.findByPk(courseId);
+    const course = await models.Course.findByPk(courseId, {include: [{
+      model: models.User,
+      attributes: ['firstName', 'lastName', 'emailAddress']
+    }]});
     if (course) {
       res.json({ course });
       res.status(200);
