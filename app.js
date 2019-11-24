@@ -127,7 +127,6 @@ app.post(
       const errorMessages = errors.array().map(error => error.msg);
       res.status(400).json({ errors: errorMessages });
     } else if (checkUserExist) {
-      console.log('it is true that the mail is exisintg');
       res.status(400).json({ message: 'email address already exists' });
     } else {
       //Hashing the new user password
