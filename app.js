@@ -119,9 +119,16 @@ app.post(
   userValidation,
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
+    const userAddress = req.body.emailAddress;
+    const checkUserExist = await models.User.findOne({
+      where: { emailAddress: userAddress }
+    });
     if (!errors.isEmpty()) {
       const errorMessages = errors.array().map(error => error.msg);
       res.status(400).json({ errors: errorMessages });
+    } else if (checkUserExist) {
+      console.log('it is true that the mail is exisintg');
+      res.status(400).json({ message: 'email address already exists' });
     } else {
       //Hashing the new user password
       const user = req.body;
@@ -198,7 +205,7 @@ app.post(
       const course = req.body;
       const newCourse = await models.Course.create(course);
       if (newCourse) {
-        res.location(newCourse.id);
+        res.location(`/api/courses/${newCourse.id}`);
         return res.status(201).end();
       } else {
         res.status(400).json({ message: err });
@@ -247,7 +254,7 @@ app.delete(
     const user = req.currentUser.id;
     const userId = deleteCourse.userId;
     if (user === userId) {
-     await deleteCourse.destroy();
+      await deleteCourse.destroy();
       res.location('/');
       res.status(204).end();
     } else {
