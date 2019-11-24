@@ -210,17 +210,19 @@ app.post(
 //UPDATING AN EXISING COURSE
 app.put(
   '/api/courses/:id',
-  authenicateUser, courseValidation,
+  authenicateUser,
+  courseValidation,
   asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
     const user = req.currentUser.id;
-    const userId = req.body.userId;
-    const title = req.body.title;
-    const description = req.body.description;
-    console.log('user', user, 'userId', userId);
-
-    if (user === userId) {
-      if (title && description) {
-        const course = await models.Course.update(
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(error => error.msg);
+      res.status(400).json({ errors: errorMessages });
+    } else {
+      const course = await models.Course.findByPk(req.params.id);
+      console.log('user', user, 'course.userId', course.userId);
+      if (user === course.userId) {
+        course.update(
           {
             title: req.body.title,
             description: req.body.description,
@@ -229,18 +231,10 @@ app.put(
           },
           { where: { id: req.params.id } }
         );
-        if (course) {
-          res.status(204).end();
-        } else {
-          res.status(400);
-        }
+        res.status(204).end();
       } else {
-        res.status(400);
+        res.status(403).end();
       }
-    } else {
-      res
-        .status(403).end()
-        
     }
   })
 );
