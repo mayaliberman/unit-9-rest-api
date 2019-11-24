@@ -220,7 +220,6 @@ app.put(
       res.status(400).json({ errors: errorMessages });
     } else {
       const course = await models.Course.findByPk(req.params.id);
-      console.log('user', user, 'course.userId', course.userId);
       if (user === course.userId) {
         course.update(
           {
@@ -244,18 +243,13 @@ app.delete(
   '/api/courses/:id',
   authenicateUser,
   asyncHandler(async (req, res) => {
-    const deleteCourse = await models.Course.findOne({
-      where: { id: req.params.id }
-    });
+    const deleteCourse = await models.Course.findByPk(req.params.id);
     const user = req.currentUser.id;
-    if (deleteCourse.userId === user) {
-      const deleteConfirmation = await deleteCourse.destroy();
-      if (deleteConfirmation) {
-        res.location('/');
-        res.status(204).end();
-      } else {
-        res.status(400).send();
-      }
+    const userId = deleteCourse.userId;
+    if (user === userId) {
+      deleteCourse.destroy();
+      res.location('/');
+      res.status(204).end();
     } else {
       res.status(403).end();
     }
