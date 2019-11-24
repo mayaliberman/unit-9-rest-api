@@ -175,7 +175,6 @@ app.get(
         }
       ]
     });
-    console.log(course.userId, 'course userId');
     if (course) {
       res.json({ course });
       res.status(200);
@@ -199,7 +198,7 @@ app.post(
       const course = req.body;
       const newCourse = await models.Course.create(course);
       if (newCourse) {
-        res.location('api/course/:id');
+        res.location(newCourse.id);
         return res.status(201).end();
       } else {
         res.status(400).json({ message: err });
@@ -211,7 +210,7 @@ app.post(
 //UPDATING AN EXISING COURSE
 app.put(
   '/api/courses/:id',
-  authenicateUser,
+  authenicateUser, courseValidation,
   asyncHandler(async (req, res) => {
     const user = req.currentUser.id;
     const userId = req.body.userId;
@@ -236,12 +235,12 @@ app.put(
           res.status(400);
         }
       } else {
-        res.status(400).json({ message: 'Please fill the missing fields' });
+        res.status(400);
       }
     } else {
       res
-        .status(403)
-        .json({ message: 'You are not aloud to update this course' });
+        .status(403).end()
+        
     }
   })
 );
@@ -251,19 +250,20 @@ app.delete(
   '/api/courses/:id',
   authenicateUser,
   asyncHandler(async (req, res) => {
-    const deleteCourse = await models.Course.destroy({
+    const deleteCourse = await models.Course.findOne({
       where: { id: req.params.id }
     });
     const user = req.currentUser.id;
     if (deleteCourse.userId === user) {
-      if (deleteCourse) {
+      const deleteConfirmation = await deleteCourse.destroy();
+      if (deleteConfirmation) {
         res.location('/');
         res.status(204).end();
       } else {
-        res.status(400);
+        res.status(400).send();
       }
     } else {
-      res.status(403);
+      res.status(403).end();
     }
   })
 );
