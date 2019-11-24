@@ -1,7 +1,7 @@
 
-# Full Stack JavaScript Techdegree v2 - REST API Project
+# REST API Project
 
-## Overview of the Provided Project Files
+## Overview 
 
 On this project, I created a REST API using Express. The API provides a way for users to administer a school database containing information about courses: users can interact with the database by retrieving a list of courses, as well as adding, updating and deleting courses in the database.
 
