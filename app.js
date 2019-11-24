@@ -247,7 +247,7 @@ app.delete(
     const user = req.currentUser.id;
     const userId = deleteCourse.userId;
     if (user === userId) {
-      deleteCourse.destroy();
+     await deleteCourse.destroy();
       res.location('/');
       res.status(204).end();
     } else {
